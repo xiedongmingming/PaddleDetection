@@ -62,10 +62,11 @@ MOT_ARCH = ['JDE', 'FairMOT', 'DeepSORT', 'ByteTrack', 'CenterTrack']
 
 
 class Trainer(object):
+
     def __init__(self, cfg, mode='train'):
+
         self.cfg = cfg.copy()
-        assert mode.lower() in ['train', 'eval', 'test'], \
-                "mode should be 'train', 'eval' or 'test'"
+        assert mode.lower() in ['train', 'eval', 'test'], "mode should be 'train', 'eval' or 'test'"
         self.mode = mode.lower()
         self.optimizer = None
         self.is_loaded_weights = False
@@ -75,96 +76,149 @@ class Trainer(object):
         self.custom_black_list = self.cfg.get('custom_black_list', None)
         self.use_master_grad = self.cfg.get('master_grad', False)
         if 'slim' in cfg and cfg['slim_type'] == 'PTQ':
+
             self.cfg['TestDataset'] = create('TestDataset')()
 
         # build data loader
         capital_mode = self.mode.capitalize()
+
         if cfg.architecture in MOT_ARCH and self.mode in [
                 'eval', 'test'
         ] and cfg.metric not in ['COCO', 'VOC']:
+
             self.dataset = self.cfg['{}MOTDataset'.format(
-                capital_mode)] = create('{}MOTDataset'.format(capital_mode))()
+                capital_mode
+            )] = create('{}MOTDataset'.format(capital_mode))()
+
         else:
+
             self.dataset = self.cfg['{}Dataset'.format(capital_mode)] = create(
-                '{}Dataset'.format(capital_mode))()
+                '{}Dataset'.format(capital_mode)
+            )()
 
         if cfg.architecture == 'DeepSORT' and self.mode == 'train':
+
             logger.error('DeepSORT has no need of training on mot dataset.')
+
             sys.exit(1)
 
         if cfg.architecture == 'FairMOT' and self.mode == 'eval':
+
             images = self.parse_mot_images(cfg)
+
             self.dataset.set_images(images)
 
         if self.mode == 'train':
+
             self.loader = create('{}Reader'.format(capital_mode))(
-                self.dataset, cfg.worker_num)
+                self.dataset, cfg.worker_num
+            )
 
         if cfg.architecture == 'JDE' and self.mode == 'train':
+
             self.cfg['JDEEmbeddingHead'][
-                'num_identities'] = self.dataset.num_identities_dict[0]
+                'num_identities'
+            ] = self.dataset.num_identities_dict[0]
             # JDE only support single class MOT now.
 
         if cfg.architecture == 'FairMOT' and self.mode == 'train':
+
             self.cfg['FairMOTEmbeddingHead'][
-                'num_identities_dict'] = self.dataset.num_identities_dict
+                'num_identities_dict'
+            ] = self.dataset.num_identities_dict
             # FairMOT support single class and multi-class MOT now.
 
         # build model
         if 'model' not in self.cfg:
+
             self.model = create(cfg.architecture)
+
         else:
+
             self.model = self.cfg.model
+
             self.is_loaded_weights = True
 
         if cfg.architecture == 'YOLOX':
+
             for k, m in self.model.named_sublayers():
+
                 if isinstance(m, nn.BatchNorm2D):
+
                     m._epsilon = 1e-3  # for amp(fp16)
                     m._momentum = 0.97  # 0.03 in pytorch
 
         #normalize params for deploy
         if 'slim' in cfg and cfg['slim_type'] == 'OFA':
+
             self.model.model.load_meanstd(cfg['TestReader'][
-                'sample_transforms'])
+                'sample_transforms'
+            ])
+
         elif 'slim' in cfg and cfg['slim_type'] == 'Distill':
+
             self.model.student_model.load_meanstd(cfg['TestReader'][
-                'sample_transforms'])
+                'sample_transforms'
+            ])
+
         elif 'slim' in cfg and cfg[
-                'slim_type'] == 'DistillPrune' and self.mode == 'train':
+                'slim_type'
+        ] == 'DistillPrune' and self.mode == 'train':
+
             self.model.student_model.load_meanstd(cfg['TestReader'][
-                'sample_transforms'])
+                'sample_transforms'
+            ])
+
         else:
+
             self.model.load_meanstd(cfg['TestReader']['sample_transforms'])
 
         # EvalDataset build with BatchSampler to evaluate in single device
         # TODO: multi-device evaluate
         if self.mode == 'eval':
+
             if cfg.architecture == 'FairMOT':
+
                 self.loader = create('EvalMOTReader')(self.dataset, 0)
+
             elif cfg.architecture == "METRO_Body":
+
                 reader_name = '{}Reader'.format(self.mode.capitalize())
+
                 self.loader = create(reader_name)(self.dataset, cfg.worker_num)
+
             else:
+
                 self._eval_batch_sampler = paddle.io.BatchSampler(
-                    self.dataset, batch_size=self.cfg.EvalReader['batch_size'])
+                    self.dataset, batch_size=self.cfg.EvalReader['batch_size']
+                )
+
                 reader_name = '{}Reader'.format(self.mode.capitalize())
+
                 # If metric is VOC, need to be set collate_batch=False.
                 if cfg.metric == 'VOC':
+
                     self.cfg[reader_name]['collate_batch'] = False
-                self.loader = create(reader_name)(self.dataset, cfg.worker_num,
-                                                  self._eval_batch_sampler)
+
+                self.loader = create(reader_name)(
+                    self.dataset,
+                    cfg.worker_num,
+                    self._eval_batch_sampler
+                )
+
         # TestDataset build after user set images, skip loader creation here
 
         # get Params
         print_params = self.cfg.get('print_params', False)
+
         if print_params:
+
             params = sum([
                 p.numel() for n, p in self.model.named_parameters()
                 if all([x not in n for x in ['_mean', '_variance', 'aux_']])
             ])  # exclude BatchNorm running status
-            logger.info('Model Params : {} M.'.format((params / 1e6).numpy()[
-                0]))
+
+            logger.info('Model Params : {} M.'.format((params / 1e6).numpy()[0]))
 
         # build optimizer in train mode
         if self.mode == 'train':

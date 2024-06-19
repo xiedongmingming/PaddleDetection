@@ -33,12 +33,19 @@ def init_fleet_env(find_unused_parameters=False):
 
 
 def init_parallel_env():
+
     env = os.environ
+
     dist = 'PADDLE_TRAINER_ID' in env and 'PADDLE_TRAINERS_NUM' in env
+
     if dist:
+
         trainer_id = int(env['PADDLE_TRAINER_ID'])
+
         local_seed = (99 + trainer_id)
+
         random.seed(local_seed)
+
         np.random.seed(local_seed)
 
     paddle.distributed.init_parallel_env()

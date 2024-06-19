@@ -77,37 +77,46 @@ class AttrDict(dict):
         return new_dict
 
 
-global_config = AttrDict()
+global_config = AttrDict() # 存放合并后的配置文件的内容
 
 BASE_KEY = '_BASE_'
 
 
 # parse and load _BASE_ recursively
-def _load_config_with_base(file_path):
+def _load_config_with_base(file_path): # 配置文件会引用多级上层的配置文件
+
     with open(file_path) as f:
+
         file_cfg = yaml.load(f, Loader=yaml.Loader)
 
     # NOTE: cfgs outside have higher priority than cfgs in _BASE_
     if BASE_KEY in file_cfg:
-        all_base_cfg = AttrDict()
+
+        all_base_cfg = AttrDict() # 全局
+
         base_ymls = list(file_cfg[BASE_KEY])
+
         for base_yml in base_ymls:
+
             if base_yml.startswith("~"):
                 base_yml = os.path.expanduser(base_yml)
             if not base_yml.startswith('/'):
                 base_yml = os.path.join(os.path.dirname(file_path), base_yml)
 
             with open(base_yml) as f:
-                base_cfg = _load_config_with_base(base_yml)
+
+                base_cfg = _load_config_with_base(base_yml) # 递归
+
                 all_base_cfg = merge_config(base_cfg, all_base_cfg)
 
         del file_cfg[BASE_KEY]
+
         return merge_config(file_cfg, all_base_cfg)
 
     return file_cfg
 
 
-def load_config(file_path):
+def load_config(file_path): # 加载配置文件
     """
     Load config from file.
 
@@ -117,11 +126,14 @@ def load_config(file_path):
     Returns: global config
     """
     _, ext = os.path.splitext(file_path)
+
     assert ext in ['.yml', '.yaml'], "only support yaml files for now"
 
     # load config from file and merge into global config
     cfg = _load_config_with_base(file_path)
-    cfg['filename'] = os.path.splitext(os.path.split(file_path)[-1])[0]
+
+    cfg['filename'] = os.path.splitext(os.path.split(file_path)[-1])[0] # 'picodet_lcnet_x1_0_layout'
+
     merge_config(cfg)
 
     return global_config
@@ -140,11 +152,17 @@ def dict_merge(dct, merge_dct):
     Returns: dct
     """
     for k, v in merge_dct.items():
+
         if (k in dct and isinstance(dct[k], dict) and
+
                 isinstance(merge_dct[k], collectionsAbc.Mapping)):
+
             dict_merge(dct[k], merge_dct[k])
+
         else:
+
             dct[k] = merge_dct[k]
+
     return dct
 
 
@@ -158,7 +176,9 @@ def merge_config(config, another_cfg=None):
     Returns: global config
     """
     global global_config
+
     dct = another_cfg or global_config
+
     return dict_merge(dct, config)
 
 
