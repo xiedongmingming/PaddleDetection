@@ -97,11 +97,11 @@ class Trainer(object):
 
             self.dataset = self.cfg['{}MOTDataset'.format(
                 capital_mode
-            )] = create('{}MOTDataset'.format(capital_mode))()
+            )] = create('{}MOTDataset'.format(capital_mode))()  # 关键步骤4.1：TrainDataset
 
         else:
 
-            self.dataset = self.cfg['{}Dataset'.format(capital_mode)] = create( # 关键步骤 TrainDataset
+            self.dataset = self.cfg['{}Dataset'.format(capital_mode)] = create(  # 关键步骤4.1：TrainDataset
                 '{}Dataset'.format(capital_mode)
             )()
 
@@ -119,7 +119,7 @@ class Trainer(object):
 
         if self.mode == 'train':
 
-            self.loader = create('{}Reader'.format(capital_mode))( # TrainReader
+            self.loader = create('{}Reader'.format(capital_mode))(  # 关键步骤4.2：TrainReader
                 self.dataset, cfg.worker_num
             )
 
@@ -140,7 +140,7 @@ class Trainer(object):
         # build model
         if 'model' not in self.cfg:
 
-            self.model = create(cfg.architecture)  # 关键步骤
+            self.model = create(cfg.architecture)  # 关键步骤4.3：
 
         else:
 
@@ -157,7 +157,7 @@ class Trainer(object):
                     m._epsilon = 1e-3  # for amp(fp16)
                     m._momentum = 0.97  # 0.03 in pytorch
 
-        #normalize params for deploy
+        # normalize params for deploy
         if 'slim' in cfg and cfg['slim_type'] == 'OFA':
 
             self.model.model.load_meanstd(cfg['TestReader'][
@@ -231,46 +231,68 @@ class Trainer(object):
 
         # build optimizer in train mode
         if self.mode == 'train':  # 关键步骤
+
             steps_per_epoch = len(self.loader)
+
             if steps_per_epoch < 1:
+
                 logger.warning(
                     "Samples in dataset are less than batch_size, please set smaller batch_size in TrainReader."
                 )
+
             self.lr = create('LearningRate')(steps_per_epoch)
+
             self.optimizer = create('OptimizerBuilder')(self.lr, self.model)
 
             # Unstructured pruner is only enabled in the train mode.
             if self.cfg.get('unstructured_prune'):
-                self.pruner = create('UnstructuredPruner')(self.model,
-                                                           steps_per_epoch)
+
+                self.pruner = create('UnstructuredPruner')(self.model, steps_per_epoch)
+
         if self.use_amp and self.amp_level == 'O2':
+
             paddle_version = paddle.__version__[:3]
+
             # paddle version >= 2.5.0 or develop
+
             if paddle_version in ["2.5", "0.0"]:
+
                 self.model, self.optimizer = paddle.amp.decorate(
                     models=self.model,
                     optimizers=self.optimizer,
                     level=self.amp_level,
-                    master_grad=self.use_master_grad)
+                    master_grad=self.use_master_grad
+                )
+
             else:
+
                 self.model, self.optimizer = paddle.amp.decorate(
                     models=self.model,
                     optimizers=self.optimizer,
-                    level=self.amp_level)
+                    level=self.amp_level
+                )
+
         self.use_ema = ('use_ema' in cfg and cfg['use_ema'])
+
         if self.use_ema:
+
             ema_decay = self.cfg.get('ema_decay', 0.9998)
+
             ema_decay_type = self.cfg.get('ema_decay_type', 'threshold')
+
             cycle_epoch = self.cfg.get('cycle_epoch', -1)
+
             ema_black_list = self.cfg.get('ema_black_list', None)
             ema_filter_no_grad = self.cfg.get('ema_filter_no_grad', False)
+
             self.ema = ModelEMA(
                 self.model,
                 decay=ema_decay,
                 ema_decay_type=ema_decay_type,
                 cycle_epoch=cycle_epoch,
                 ema_black_list=ema_black_list,
-                ema_filter_no_grad=ema_filter_no_grad)
+                ema_filter_no_grad=ema_filter_no_grad
+            )
 
         self._nranks = dist.get_world_size()
         self._local_rank = dist.get_rank()
@@ -424,7 +446,8 @@ class Trainer(object):
                     output_eval=output_eval,
                     bias=bias,
                     save_prediction_only=save_prediction_only,
-                    imid2path=imid2path)
+                    imid2path=imid2path
+                )
             ]
 
         elif self.cfg.metric == 'VOC':
@@ -440,7 +463,8 @@ class Trainer(object):
                     map_type=self.cfg.map_type,
                     classwise=classwise,
                     output_eval=output_eval,
-                    save_prediction_only=save_prediction_only)
+                    save_prediction_only=save_prediction_only
+                )
             ]
 
         elif self.cfg.metric == 'WiderFace':
@@ -449,10 +473,10 @@ class Trainer(object):
 
             self._metrics = [
                 WiderFaceMetric(
-                    image_dir=os.path.join(self.dataset.dataset_dir,
-                                           self.dataset.image_dir),
+                    image_dir=os.path.join(self.dataset.dataset_dir, self.dataset.image_dir),
                     anno_file=self.dataset.get_anno(),
-                    multi_scale=multi_scale)
+                    multi_scale=multi_scale
+                )
             ]
 
         elif self.cfg.metric == 'KeyPointTopDownCOCOEval':
@@ -470,7 +494,8 @@ class Trainer(object):
                     len(eval_dataset),
                     self.cfg.num_joints,
                     self.cfg.save_dir,
-                    save_prediction_only=save_prediction_only)
+                    save_prediction_only=save_prediction_only
+                )
             ]
 
         elif self.cfg.metric == 'KeyPointTopDownCOCOWholeBadyHandEval':
@@ -488,7 +513,8 @@ class Trainer(object):
                     len(eval_dataset),
                     self.cfg.num_joints,
                     self.cfg.save_dir,
-                    save_prediction_only=save_prediction_only)
+                    save_prediction_only=save_prediction_only
+                )
             ]
 
         elif self.cfg.metric == 'KeyPointTopDownMPIIEval':
@@ -506,7 +532,8 @@ class Trainer(object):
                     len(eval_dataset),
                     self.cfg.num_joints,
                     self.cfg.save_dir,
-                    save_prediction_only=save_prediction_only)
+                    save_prediction_only=save_prediction_only
+                )
             ]
 
         elif self.cfg.metric == 'Pose3DEval':
@@ -661,9 +688,11 @@ class Trainer(object):
         })
 
         self.status['batch_time'] = stats.SmoothedValue(
-            self.cfg.log_iter, fmt='{avg:.4f}')
+            self.cfg.log_iter, fmt='{avg:.4f}'
+        )
         self.status['data_time'] = stats.SmoothedValue(
-            self.cfg.log_iter, fmt='{avg:.4f}')
+            self.cfg.log_iter, fmt='{avg:.4f}'
+        )
 
         self.status['training_staus'] = stats.TrainingStats(self.cfg.log_iter)
 

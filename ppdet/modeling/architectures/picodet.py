@@ -42,17 +42,17 @@ class PicoDet(BaseArch):  # 模型类
 
         super(PicoDet, self).__init__()
 
-        self.backbone = backbone
-        self.neck = neck
-        self.head = head
-        self.export_post_process = True
+        self.backbone = backbone  # LCNet：主干网络
+        self.neck = neck  # CSPPAN
+        self.head = head  # PicoHead
+        self.export_post_process = True  #
         self.export_nms = True
         self.nms_cpu = nms_cpu
 
     @classmethod
     def from_config(cls, cfg, *args, **kwargs):
 
-        backbone = create(cfg['backbone'])
+        backbone = create(cfg['backbone'])  # 创建对象：LCNet
 
         kwargs = {'input_shape': backbone.out_shape}
 

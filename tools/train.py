@@ -46,7 +46,7 @@ logger = setup_logger('train')
 
 def parse_args():
 
-    parser = ArgsParser() # 提供基础命令行参数
+    parser = ArgsParser()  # 提供基础命令行参数
 
     parser.add_argument(
         "--eval",
@@ -166,7 +166,7 @@ def run(FLAGS, cfg):
     elif cfg.get('use_cot', False):
         trainer = TrainerCot(cfg, mode='train')
     else:
-        trainer = Trainer(cfg, mode='train')  # 关键步骤
+        trainer = Trainer(cfg, mode='train')  # 关键步骤4
 
     # load weights
     if FLAGS.resume is not None:
@@ -179,27 +179,28 @@ def run(FLAGS, cfg):
 
     elif 'pretrain_weights' in cfg and cfg.pretrain_weights:
 
-        trainer.load_weights(cfg.pretrain_weights) # 'https://paddledet.bj.bcebos.com/models/pretrained/LCNet_x1_0_pretrained.pdparams'
+        trainer.load_weights(cfg.pretrain_weights)  # 'https://paddledet.bj.bcebos.com/models/pretrained/LCNet_x1_0_pretrained.pdparams'
 
     # training
-    trainer.train(FLAGS.eval)  # 关键步骤
+    trainer.train(FLAGS.eval)  # 关键步骤5
 
 
+# 主函数定义
 def main():
 
-    FLAGS = parse_args()
+    FLAGS = parse_args()  # 关键步骤1：加载运行参数
 
-    cfg = load_config(FLAGS.config)
+    cfg = load_config(FLAGS.config)  # 关键步骤2：加载YAML配置
 
-    merge_args(cfg, FLAGS) # 排除一些命令行参数
+    merge_args(cfg, FLAGS)  # 排除一些命令行参数
 
     merge_config(FLAGS.opt)
 
-    if 'use_npu' not in cfg: # disable npu in config by default
+    if 'use_npu' not in cfg:  # disable npu in config by default
 
         cfg.use_npu = False
 
-    if 'use_xpu' not in cfg: # disable xpu in config by default
+    if 'use_xpu' not in cfg:  # disable xpu in config by default
 
         cfg.use_xpu = False
 
@@ -207,7 +208,7 @@ def main():
 
         cfg.use_gpu = False
 
-    if 'use_mlu' not in cfg: # disable mlu in config by default
+    if 'use_mlu' not in cfg:  # disable mlu in config by default
 
         cfg.use_mlu = False
 
@@ -236,9 +237,10 @@ def main():
     check.check_mlu(cfg.use_mlu)
     check.check_version()
 
-    run(FLAGS, cfg)
+    run(FLAGS, cfg) # 关键步骤3：
 
 
+# 程序入口
 if __name__ == "__main__":
     #
-    main()
+    main()  # 主函数入口

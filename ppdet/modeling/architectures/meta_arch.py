@@ -16,13 +16,13 @@ __all__ = ['BaseArch']
 
 
 @register
-class BaseArch(nn.Layer):
+class BaseArch(nn.Layer):  # 网络的基础架构
 
     def __init__(self, data_format='NCHW', use_extra_data=False):
 
         super(BaseArch, self).__init__()
 
-        self.data_format = data_format
+        self.data_format = data_format  # NCHW
         self.inputs = {}
         self.fuse_norm = False
         self.use_extra_data = use_extra_data

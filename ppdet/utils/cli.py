@@ -22,24 +22,33 @@ __all__ = ['ColorTTY', 'ArgsParser']
 
 
 class ColorTTY(object):
+
     def __init__(self):
+
         super(ColorTTY, self).__init__()
+
         self.colors = ['red', 'green', 'yellow', 'blue', 'magenta', 'cyan']
 
     def __getattr__(self, attr):
+
         if attr in self.colors:
+
             color = self.colors.index(attr) + 31
 
             def color_message(message):
+
                 return "[{}m{}[0m".format(color, message)
 
             setattr(self, attr, color_message)
+
             return color_message
 
     def bold(self, message):
+
         return self.with_code('01', message)
 
     def with_code(self, code, message):
+
         return "[{}m{}[0m".format(code, message)
 
 
@@ -50,8 +59,9 @@ class ArgsParser(ArgumentParser):
         super(ArgsParser, self).__init__(
             formatter_class=RawDescriptionHelpFormatter
         )
-        self.add_argument("-c", "--config", help="configuration file to use")
-        self.add_argument(
+
+        self.add_argument("-c", "--config", help="configuration file to use")  # 训练用配置文件：YML
+        self.add_argument(  # 训练用配置项（覆盖配置文件）
             "-o", "--opt", nargs='*', help="set configuration options"
         )
 
@@ -162,8 +172,11 @@ def print_total_cfg(config):
                 key += " ({})".format(type_name)
 
         default = module.find_default_keys()
+
         missing = module.find_missing_keys()
+
         mismatch = module.find_mismatch_keys()
+
         extra = module.find_extra_keys()
 
         dep_missing = []
@@ -201,13 +214,21 @@ def print_total_cfg(config):
                 value = module[name]
 
             if name in extra:
+
                 value = dump_value(value) + " <extraneous>"
+
             elif name in mismatch:
+
                 value = dump_value(value) + " <type mismatch>"
+
             elif name in dep_missing:
+
                 value = dump_value(value) + " <module config missing>"
+
             elif name in override and value != '<missing>':
+
                 mark = green
+
                 new_name = mark + name
 
             replacement[new_name] = value
