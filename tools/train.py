@@ -140,9 +140,9 @@ def parse_args():
 
 def run(FLAGS, cfg):
 
-    if cfg.fleet: # init fleet environment
+    if cfg.fleet:  # init fleet environment
         init_fleet_env(cfg.get('find_unused_parameters', False))
-    else: # init parallel environment if nranks > 1
+    else:  # init parallel environment if nranks > 1
         init_parallel_env()
 
     if FLAGS.enable_ce:
@@ -166,7 +166,7 @@ def run(FLAGS, cfg):
     elif cfg.get('use_cot', False):
         trainer = TrainerCot(cfg, mode='train')
     else:
-        trainer = Trainer(cfg, mode='train')
+        trainer = Trainer(cfg, mode='train')  # 关键步骤
 
     # load weights
     if FLAGS.resume is not None:
@@ -179,10 +179,10 @@ def run(FLAGS, cfg):
 
     elif 'pretrain_weights' in cfg and cfg.pretrain_weights:
 
-        trainer.load_weights(cfg.pretrain_weights)
+        trainer.load_weights(cfg.pretrain_weights) # 'https://paddledet.bj.bcebos.com/models/pretrained/LCNet_x1_0_pretrained.pdparams'
 
     # training
-    trainer.train(FLAGS.eval)
+    trainer.train(FLAGS.eval)  # 关键步骤
 
 
 def main():

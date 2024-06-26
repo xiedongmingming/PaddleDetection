@@ -31,17 +31,27 @@ def setup_orderdict():
 
 
 def _make_python_constructor(cls):
+
     def python_constructor(loader, node):
+
         if isinstance(node, yaml.SequenceNode):
+
             args = loader.construct_sequence(node, deep=True)
+
             return cls(*args)
+
         else:
+
             kwargs = loader.construct_mapping(node, deep=True)
+
             try:
+
                 return cls(**kwargs)
+
             except Exception as ex:
-                print("Error when construct {} instance from yaml config".
-                      format(cls.__name__))
+
+                print("Error when construct {} instance from yaml config".format(cls.__name__))
+
                 raise ex
 
     return python_constructor

@@ -86,3 +86,6 @@ kernel_meta/
 # MAC
 *.DS_Store
 
+dataset/cdla
+dataset/publaynet
+tools/output

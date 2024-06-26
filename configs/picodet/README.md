@@ -1,6 +1,6 @@
-简体中文 | [English](README_en.md)
+简体中文 | [ENGLISH](README_en.md)
 
-# PP-PicoDet
+# PP-PICODET
 
 ![](../../docs/images/picedet_demo.jpeg)
 

@@ -77,7 +77,7 @@ class AttrDict(dict):
         return new_dict
 
 
-global_config = AttrDict() # 存放合并后的配置文件的内容
+global_config = AttrDict() # 存放合并后的配置文件的内容 -- 各个组件会被注册进来
 
 BASE_KEY = '_BASE_'
 
@@ -177,35 +177,48 @@ def merge_config(config, another_cfg=None):
     """
     global global_config
 
-    dct = another_cfg or global_config
+    dct = another_cfg or global_config # 取后者
 
     return dict_merge(dct, config)
 
 
 def get_registered_modules():
+
     return {k: v for k, v in global_config.items() if isinstance(v, SchemaDict)}
 
 
 def make_partial(cls):
+
     op_module = importlib.import_module(cls.__op__.__module__)
+
     op = getattr(op_module, cls.__op__.__name__)
+
     cls.__category__ = getattr(cls, '__category__', None) or 'op'
 
     def partial_apply(self, *args, **kwargs):
+
         kwargs_ = self.__dict__.copy()
+
         kwargs_.update(kwargs)
+
         return op(*args, **kwargs_)
 
     if getattr(cls, '__append_doc__', True):  # XXX should default to True?
+
         if sys.version_info[0] > 2:
+
             cls.__doc__ = "Wrapper for `{}` OP".format(op.__name__)
             cls.__init__.__doc__ = op.__doc__
             cls.__call__ = partial_apply
             cls.__call__.__doc__ = op.__doc__
+
         else:
+
             # XXX work around for python 2
             partial_apply.__doc__ = op.__doc__
+
             cls.__call__ = partial_apply
+
     return cls
 
 
@@ -219,15 +232,21 @@ def register(cls):
     Returns: cls
     """
     if cls.__name__ in global_config:
+
         raise ValueError("Module class already registered: {}".format(
-            cls.__name__))
+            cls.__name__)
+        )
+
     if hasattr(cls, '__op__'):
+
         cls = make_partial(cls)
+
     global_config[cls.__name__] = extract_schema(cls)
+
     return cls
 
 
-def create(cls_or_name, **kwargs):
+def create(cls_or_name, **kwargs): # 根据名称构造类 -- 'PicoDet'
     """
     Create an instance of given module class.
 
@@ -236,77 +255,115 @@ def create(cls_or_name, **kwargs):
 
     Returns: instance of type `cls_or_name`
     """
-    assert type(cls_or_name) in [type, str
-                                 ], "should be a class or name of a class"
+    assert type(cls_or_name) in [type, str], "should be a class or name of a class"
+
     name = type(cls_or_name) == str and cls_or_name or cls_or_name.__name__
+
     if name in global_config:
+
         if isinstance(global_config[name], SchemaDict):
-            pass
-        elif hasattr(global_config[name], "__dict__"):
-            # support instance return directly
+            pass # TrainDateset/TrainReader-> # 关键步骤
+        elif hasattr(global_config[name], "__dict__"):  # support instance return directly
             return global_config[name]
         else:
             raise ValueError("The module {} is not registered".format(name))
+
     else:
+
         raise ValueError("The module {} is not registered".format(name))
 
     config = global_config[name]
-    cls = getattr(config.pymodule, name)
+
+    cls = getattr(config.pymodule, name) # ？？？pymodule：哪来的？<class 'ppdet.data.source.dataset.TrainDataset'>、<class 'ppdet.data.reader.TrainReader'>
+
     cls_kwargs = {}
-    cls_kwargs.update(global_config[name])
+
+    cls_kwargs.update(global_config[name]) # 只会更新文件中的配置
 
     # parse `shared` annoation of registered modules
-    if getattr(config, 'shared', None):
+    if getattr(config, 'shared', None): # 这个配置从哪来？
+
         for k in config.shared:
+
             target_key = config[k]
-            shared_conf = config.schema[k].default
+
+            shared_conf = config.schema[k].default # <ppdet.core.config.schema.SharedConfig object at 0x0000016F942DCA60>
+
             assert isinstance(shared_conf, SharedConfig)
-            if target_key is not None and not isinstance(target_key,
-                                                         SharedConfig):
+
+            if target_key is not None and not isinstance(target_key, SharedConfig):
+
                 continue  # value is given for the module
-            elif shared_conf.key in global_config:
-                # `key` is present in config
+
+            elif shared_conf.key in global_config:  # `key` is present in config
                 cls_kwargs[k] = global_config[shared_conf.key]
             else:
                 cls_kwargs[k] = shared_conf.default_value
 
     # parse `inject` annoation of registered modules
     if getattr(cls, 'from_config', None):
+
         cls_kwargs.update(cls.from_config(config, **kwargs))
 
     if getattr(config, 'inject', None):
+
         for k in config.inject:
+
             target_key = config[k]
+
             # optional dependency
             if target_key is None:
+
                 continue
 
             if isinstance(target_key, dict) or hasattr(target_key, '__dict__'):
+
                 if 'name' not in target_key.keys():
+
                     continue
+
                 inject_name = str(target_key['name'])
+
                 if inject_name not in global_config:
+
                     raise ValueError(
                         "Missing injection name {} and check it's name in cfg file".
-                        format(k))
+                        format(k)
+                    )
+
                 target = global_config[inject_name]
+
                 for i, v in target_key.items():
+
                     if i == 'name':
+
                         continue
+
                     target[i] = v
+
                 if isinstance(target, SchemaDict):
+
                     cls_kwargs[k] = create(inject_name)
+
             elif isinstance(target_key, str):
+
                 if target_key not in global_config:
+
                     raise ValueError("Missing injection config:", target_key)
+
                 target = global_config[target_key]
+
                 if isinstance(target, SchemaDict):
                     cls_kwargs[k] = create(target_key)
                 elif hasattr(target, '__dict__'):  # serialized object
                     cls_kwargs[k] = target
+
             else:
+
                 raise ValueError("Unsupported injection type:", target_key)
+
     # prevent modification of global config values of reference types
     # (e.g., list, dict) from within the created module instances
     #kwargs = copy.deepcopy(kwargs)
+
     return cls(**cls_kwargs)

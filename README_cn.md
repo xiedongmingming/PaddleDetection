@@ -1,4 +1,4 @@
-简体中文 | [English](README_en.md)
+简体中文 | [ENGLISH](README_en.md)
 
 <div align="center">
 <p align="center">
@@ -49,7 +49,7 @@
 
 ## 🌈简介
 
-PaddleDetection是一个基于PaddlePaddle的目标检测端到端开发套件，在提供丰富的模型组件和测试基准的同时，注重端到端的产业落地应用，通过打造产业级特色模型|工具、建设产业应用范例等手段，帮助开发者实现数据准备、模型选型、模型训练、模型部署的全流程打通，快速进行落地应用。
+PADDLEDETECTION是一个基于PADDLEPADDLE的目标检测端到端开发套件，在提供丰富的模型组件和测试基准的同时，注重端到端的产业落地应用，通过打造产业级特色模型|工具、建设产业应用范例等手段，帮助开发者实现数据准备、模型选型、模型训练、模型部署的全流程打通，快速进行落地应用。
 
 主要模型效果示例如下（点击标题可快速跳转）：
 
@@ -63,7 +63,7 @@ PaddleDetection是一个基于PaddlePaddle的目标检测端到端开发套件�
 |                                                [**行人分析——闯入分析**](#pp-human-实时行人分析工具)                                                |                                                [**行人分析——行为分析**](#pp-human-实时行人分析工具)                                                |                                                 [**行人分析——属性分析**](#pp-human-实时行人分析工具)                                                 |                                                [**行人分析——人流统计**](#pp-human-实时行人分析工具)                                                |
 | <img src='https://user-images.githubusercontent.com/61035602/206095792-ae0ac107-cd8e-492a-8baa-32118fc82b04.gif' height="126px" width="180px"> | <img src='https://user-images.githubusercontent.com/61035602/206095778-fdd73e5d-9f91-48c7-9d3d-6f2e02ec3f79.gif' height="126px" width="180px"> |  <img src='https://user-images.githubusercontent.com/61035602/206095709-2c3a209e-6626-45dd-be16-7f0bf4d48a14.gif' height="126px" width="180px">  | <img src="https://user-images.githubusercontent.com/61035602/206113351-cc59df79-8672-4d76-b521-a15acf69ae78.gif" height="126px" width="180px"> |
 
-同时，PaddleDetection提供了模型的在线体验功能，用户可以选择自己的数据进行在线推理。
+同时，PADDLEDETECTION提供了模型的在线体验功能，用户可以选择自己的数据进行在线推理。
 
 `说明`：考虑到服务器负载压力，在线推理均为CPU推理，完整的模型开发实例以及产业部署实践代码示例请前往[🎗️产业特色模型|产业工具](#️产业特色模型产业工具-1)。
 
@@ -91,8 +91,8 @@ PaddleDetection是一个基于PaddlePaddle的目标检测端到端开发套件�
 ## 👫开源社区
 
 - **📑项目合作：** 如果您是企业开发者且有明确的目标检测垂类应用需求，请扫描如下二维码入群，并联系`群管理员AI`后可免费与官方团队展开不同层次的合作。
-- **🏅️社区贡献：** PaddleDetection非常欢迎你加入到飞桨社区的开源建设中，参与贡献方式可以参考[开源项目开发指南](docs/contribution/README.md)。
-- **💻直播教程：** PaddleDetection会定期在飞桨直播间([B站:飞桨PaddlePaddle](https://space.bilibili.com/476867757)、[微信: 飞桨PaddlePaddle](https://mp.weixin.qq.com/s/6ji89VKqoXDY6SSGkxS8NQ))，针对发新内容、以及产业范例、使用教程等进行直播分享。
+- **🏅️社区贡献：** PADDLEDETECTION非常欢迎你加入到飞桨社区的开源建设中，参与贡献方式可以参考[开源项目开发指南](docs/contribution/README.md)。
+- **💻直播教程：** PADDLEDETECTION会定期在飞桨直播间([B站:飞桨PADDLEPADDLE](https://space.bilibili.com/476867757)、[微信: 飞桨PADDLEPADDLE](https://mp.weixin.qq.com/s/6ji89VKqoXDY6SSGkxS8NQ))，针对发新内容、以及产业范例、使用教程等进行直播分享。
 - **🎁加入社区：** **微信扫描二维码并填写问卷之后，可以及时获取如下信息，包括：**
   - 社区最新文章、直播课等活动预告
   - 往期直播录播&PPT
