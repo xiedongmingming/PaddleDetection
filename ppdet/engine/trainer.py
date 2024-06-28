@@ -75,7 +75,7 @@ class Trainer(object):
 
         self.is_loaded_weights = False
 
-        self.use_amp = self.cfg.get('amp', False)
+        self.use_amp = self.cfg.get('amp', False)  # auto mixed precision mode
 
         self.amp_level = self.cfg.get('amp_level', 'O1')
 
@@ -640,7 +640,7 @@ class Trainer(object):
 
         Init_mark = False
 
-        if validate:
+        if validate:  # 训练中是否验证
 
             self.cfg['EvalDataset'] = self.cfg.EvalDataset = create("EvalDataset")()
 
@@ -684,7 +684,7 @@ class Trainer(object):
         self.status.update({
             'epoch_id': self.start_epoch,
             'step_id': 0,
-            'steps_per_epoch': len(self.loader)
+            'steps_per_epoch': len(self.loader)  # 208
         })
 
         self.status['batch_time'] = stats.SmoothedValue(
@@ -721,7 +721,7 @@ class Trainer(object):
 
             self.loader.dataset.set_epoch(epoch_id)
 
-            model.train()
+            model.train()  # 执行训练？？？指示进入训练模式？
 
             iter_tic = time.time()
 
@@ -815,14 +815,14 @@ class Trainer(object):
                     else:
 
                         # model forward
-                        outputs = model(data)
+                        outputs = model(data)  # 前向传播
 
                         loss = outputs['loss']
 
                         # model backward
-                        loss.backward()
+                        loss.backward()   # 反向传播
 
-                    self.optimizer.step()
+                    self.optimizer.step()  # 更新参数
 
                 curr_lr = self.optimizer.get_lr()
 
@@ -874,8 +874,7 @@ class Trainer(object):
                     # build evaluation dataset and loader
                     self._eval_dataset = self.cfg.EvalDataset
 
-                    self._eval_batch_sampler = \
-                        paddle.io.BatchSampler(
+                    self._eval_batch_sampler = paddle.io.BatchSampler(
                             self._eval_dataset,
                             batch_size=self.cfg.EvalReader['batch_size']
                         )
@@ -888,7 +887,8 @@ class Trainer(object):
                     if self.cfg.metric == "Pose3DEval":
 
                         self._eval_loader = create('EvalReader')(
-                            self._eval_dataset, self.cfg.worker_num
+                            self._eval_dataset,
+                            self.cfg.worker_num
                         )
 
                     else:

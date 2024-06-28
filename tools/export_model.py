@@ -40,34 +40,48 @@ logger = setup_logger('export_model')
 
 
 def parse_args():
+    #
     parser = ArgsParser()
+
     parser.add_argument(
         "--output_dir",
         type=str,
         default="output_inference",
-        help="Directory for storing the output model files.")
+        help="Directory for storing the output model files."
+    )
     parser.add_argument(
         "--export_serving_model",
         type=bool,
         default=False,
-        help="Whether to export serving model or not.")
+        help="Whether to export serving model or not."
+    )
     parser.add_argument(
         "--slim_config",
         default=None,
         type=str,
-        help="Configuration file of slim method.")
+        help="Configuration file of slim method."
+    )
+
     parser.add_argument("--for_fd", action='store_true')
+
     args = parser.parse_args()
+
     return args
 
 
 def run(FLAGS, cfg):
+
     ssod_method = cfg.get('ssod_method', None)
+
     if ssod_method is not None and ssod_method == 'ARSL':
+
         trainer = Trainer_ARSL(cfg, mode='test')
+
         trainer.load_weights(cfg.weights, ARSL_eval=True)
+
     # build detector
     else:
+
         trainer = Trainer(cfg, mode='test')
 
         # load weights
@@ -80,39 +94,52 @@ def run(FLAGS, cfg):
     trainer.export(FLAGS.output_dir, for_fd=FLAGS.for_fd)
 
     if FLAGS.export_serving_model:
+
         assert not FLAGS.for_fd
+
         from paddle_serving_client.io import inference_model_to_serving
+
         model_name = os.path.splitext(os.path.split(cfg.filename)[-1])[0]
 
         inference_model_to_serving(
             dirname="{}/{}".format(FLAGS.output_dir, model_name),
-            serving_server="{}/{}/serving_server".format(FLAGS.output_dir,
-                                                         model_name),
-            serving_client="{}/{}/serving_client".format(FLAGS.output_dir,
-                                                         model_name),
+            serving_server="{}/{}/serving_server".format(FLAGS.output_dir, model_name),
+            serving_client="{}/{}/serving_client".format(FLAGS.output_dir, model_name),
             model_filename="model.pdmodel",
-            params_filename="model.pdiparams")
+            params_filename="model.pdiparams"
+        )
 
 
 def main():
+    #
     paddle.set_device("cpu")
+
     FLAGS = parse_args()
+
     cfg = load_config(FLAGS.config)
+
     merge_config(FLAGS.opt)
 
     if FLAGS.slim_config:
+        #
         cfg = build_slim_model(cfg, FLAGS.slim_config, mode='test')
 
     # FIXME: Temporarily solve the priority problem of FLAGS.opt
     merge_config(FLAGS.opt)
+
     check_config(cfg)
+
     if 'use_gpu' not in cfg:
+        #
         cfg.use_gpu = False
+
     check_gpu(cfg.use_gpu)
+
     check_version()
 
     run(FLAGS, cfg)
 
 
 if __name__ == '__main__':
+    #
     main()

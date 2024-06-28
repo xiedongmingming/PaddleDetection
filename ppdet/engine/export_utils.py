@@ -188,10 +188,15 @@ TO_STATIC_SPEC = {
 
 
 def apply_to_static(config, model):
+
     filename = config.get('filename', None)
+
     spec = TO_STATIC_SPEC.get(filename, None)
+
     model = paddle.jit.to_static(model, input_spec=spec)
+
     logger.info("Successfully to apply @to_static with specs: {}".format(spec))
+
     return model
 
 

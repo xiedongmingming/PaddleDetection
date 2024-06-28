@@ -864,7 +864,7 @@ class LDGFLHead(GFLHead):
                     weight=remain_targets.expand([-1, 4]).reshape([-1]),
                     avg_factor=16.0
                 )
-                
+
             else:
 
                 loss_ld_vlr = bbox_pred.sum() * 0

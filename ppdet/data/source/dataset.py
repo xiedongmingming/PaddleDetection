@@ -405,11 +405,11 @@ class CommonDataset(object):
 
         super(CommonDataset, self).__init__()
 
-        dataset_args = copy.deepcopy(dataset_args) # 只会更新文件中的配置
+        dataset_args = copy.deepcopy(dataset_args)  # 只会更新文件中的配置
 
-        type = dataset_args.pop("name") # 'COCODataSet'
+        type = dataset_args.pop("name")  # 'COCODataSet'
 
-        self.dataset = getattr(source, type)(**dataset_args) # 关键步骤 -- 找到包下的类并调用：COCODataSet
+        self.dataset = getattr(source, type)(**dataset_args)  # 关键步骤 -- 找到包下的类并调用：COCODataSet
 
     def __call__(self):
 
