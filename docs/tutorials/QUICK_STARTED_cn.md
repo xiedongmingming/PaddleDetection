@@ -12,7 +12,10 @@ export CUDA_VISIBLE_DEVICES=0
 ```
 # 用PP-YOLO算法在COCO数据集上预训练模型预测一张图片
 
-python tools/infer.py -c configs/ppyolo/ppyolo_r50vd_dcn_1x_coco.yml -o use_gpu=true weights=https://paddledet.bj.bcebos.com/models/ppyolo_r50vd_dcn_1x_coco.pdparams --infer_img=demo/000000014439.jpg
+python tools/infer.py 
+-c configs/ppyolo/ppyolo_r50vd_dcn_1x_coco.yml 
+-o use_gpu=true weights=https://paddledet.bj.bcebos.com/models/ppyolo_r50vd_dcn_1x_coco.pdparams 
+--infer_img=demo/000000014439.jpg
 ```
 
 结果如下图：
@@ -38,10 +41,13 @@ python dataset/roadsign_voc/download_roadsign_voc.py
 # -o：参数表示指定配置文件中的全局变量（覆盖配置文件中的设置），这里设置使用GPU
 # --eval：参数表示边训练边评估，最后会自动保存一个名为MODEL_FINAL.PDPARAMS的模型
 
-python tools/train.py -c configs/yolov3/yolov3_mobilenet_v1_roadsign.yml --eval -o use_gpu=true
+python tools/train.py 
+-c configs/yolov3/yolov3_mobilenet_v1_roadsign.yml 
+--eval 
+-o use_gpu=true
 ```
 
-如果想通过VISUALDL实时观察LOSS变化曲线，在训练命令中添加`--use_vdl=true`，以及通过`--vdl_log_dir`设置日志保存路径。
+如果想通过VISUALDL实时观察LOSS变化曲线，在训练命令中添加`--USE_VDL=TRUE`，以及通过`--VDL_LOG_DIR`设置日志保存路径。
 
 **但注意VISUALDL需PYTHON>=3.5**
 
@@ -67,8 +73,8 @@ visualdl --logdir vdl_dir/scalar/ --host <host_IP> --port <port_num>
 # 评估：默认使用训练过程中保存的MODEL_FINAL.PDPARAMS
 # -c：参数表示指定使用哪个配置文件
 # -o：参数表示指定配置文件中的全局变量（覆盖配置文件中的设置）
-# 目前只支持单卡评估
 
+# 目前只支持单卡评估
 python tools/eval.py -c configs/yolov3/yolov3_mobilenet_v1_roadsign.yml -o use_gpu=true
 ```
 最终模型精度在MAP=0.85左右，由于数据集较小因此每次训练结束后精度会有一定波动

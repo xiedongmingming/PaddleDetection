@@ -88,6 +88,8 @@ kernel_meta/
 *.DS_Store
 
 dataset/cdla
+dataset/voc
 dataset/publaynet
 tools/output
 tools/output1
+deploy/python/output

@@ -231,10 +231,12 @@ def main():
     merge_config(FLAGS.opt)
 
     check.check_config(cfg)
+
     check.check_gpu(cfg.use_gpu)
     check.check_npu(cfg.use_npu)
     check.check_xpu(cfg.use_xpu)
     check.check_mlu(cfg.use_mlu)
+
     check.check_version()
 
     run(FLAGS, cfg) # 关键步骤3：

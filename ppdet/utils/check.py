@@ -141,16 +141,25 @@ def check_config(cfg):
     when Config is not compliant.
     """
     err = "'{}' not specified in config file. Please set it in config file."
+
     check_list = ['architecture', 'num_classes']
+
     try:
+
         for var in check_list:
+
             if not var in cfg:
+
                 logger.error(err.format(var))
+
                 sys.exit(1)
+
     except Exception as e:
+
         pass
 
     if 'log_iter' not in cfg:
+
         cfg.log_iter = 20
 
     return cfg
