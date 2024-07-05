@@ -21,13 +21,16 @@ import sys
 
 # add python path of PaddleDetection to sys.path
 parent_path = os.path.abspath(os.path.join(__file__, *(['..'] * 2)))
+
 sys.path.insert(0, parent_path)
 
 # ignore warning log
 import warnings
+
 warnings.filterwarnings('ignore')
 
 import paddle
+
 from ppdet.core.workspace import load_config, merge_config
 from ppdet.utils.check import check_gpu, check_version, check_config
 from ppdet.utils.cli import ArgsParser
@@ -36,6 +39,7 @@ from ppdet.engine.trainer_ssod import Trainer_ARSL
 from ppdet.slim import build_slim_model
 
 from ppdet.utils.logger import setup_logger
+
 logger = setup_logger('export_model')
 
 

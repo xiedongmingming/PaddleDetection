@@ -91,5 +91,5 @@ dataset/cdla
 dataset/voc
 dataset/publaynet
 tools/output
-tools/output1
+tools/output_inference
 deploy/python/output

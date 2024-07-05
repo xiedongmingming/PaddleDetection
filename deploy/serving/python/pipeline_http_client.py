@@ -20,10 +20,12 @@ import os
 import argparse
 
 parser = argparse.ArgumentParser(description="args for paddleserving")
+
 parser.add_argument("--image_dir", type=str)
 parser.add_argument("--image_file", type=str)
 parser.add_argument("--http_port", type=int, default=18093)
 parser.add_argument("--service_name", type=str, default="ppdet")
+
 args = parser.parse_args()
 
 

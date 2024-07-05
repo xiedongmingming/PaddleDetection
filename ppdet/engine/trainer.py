@@ -1577,25 +1577,38 @@ class Trainer(object):
 
         return os.path.join(output_dir, "{}".format(name)) + ext
 
-    def _get_infer_cfg_and_input_spec(self,
-                                      save_dir,
-                                      prune_input=True,
-                                      kl_quant=False,
-                                      yaml_name=None):
+    def _get_infer_cfg_and_input_spec(
+        self,
+        save_dir,
+        prune_input=True,
+        kl_quant=False,
+        yaml_name=None
+    ):
+
         if yaml_name is None:
+
             yaml_name = 'infer_cfg.yml'
+
         image_shape = None
+
         im_shape = [None, 2]
+
         scale_factor = [None, 2]
+
         if self.cfg.architecture in MOT_ARCH:
             test_reader_name = 'TestMOTReader'
         else:
             test_reader_name = 'TestReader'
+
         if 'inputs_def' in self.cfg[test_reader_name]:
+
             inputs_def = self.cfg[test_reader_name]['inputs_def']
+
             image_shape = inputs_def.get('image_shape', None)
+
         # set image_shape=[None, 3, -1, -1] as default
         if image_shape is None:
+
             image_shape = [None, 3, -1, -1]
 
         if len(image_shape) == 3:
@@ -1605,167 +1618,252 @@ class Trainer(object):
             scale_factor = [image_shape[0], 2]
 
         if hasattr(self.model, 'deploy'):
+
             self.model.deploy = True
 
         if 'slim' not in self.cfg:
+
             for layer in self.model.sublayers():
+
                 if hasattr(layer, 'convert_to_deploy'):
+
                     layer.convert_to_deploy()
 
-        if hasattr(self.cfg, 'export') and 'fuse_conv_bn' in self.cfg[
-                'export'] and self.cfg['export']['fuse_conv_bn']:
+        if hasattr(self.cfg, 'export') and 'fuse_conv_bn' in self.cfg['export'] and self.cfg['export']['fuse_conv_bn']:
+
             self.model = fuse_conv_bn(self.model)
 
         export_post_process = self.cfg['export'].get(
-            'post_process', False) if hasattr(self.cfg, 'export') else True
+            'post_process', False
+        ) if hasattr(self.cfg, 'export') else True
+
         export_nms = self.cfg['export'].get('nms', False) if hasattr(
-            self.cfg, 'export') else True
+            self.cfg, 'export'
+        ) else True
+
         export_benchmark = self.cfg['export'].get(
-            'benchmark', False) if hasattr(self.cfg, 'export') else False
+            'benchmark', False
+        ) if hasattr(self.cfg, 'export') else False
+
         if hasattr(self.model, 'fuse_norm'):
-            self.model.fuse_norm = self.cfg['TestReader'].get('fuse_normalize',
-                                                              False)
+
+            self.model.fuse_norm = self.cfg['TestReader'].get('fuse_normalize', False)
+
         if hasattr(self.model, 'export_post_process'):
+
             self.model.export_post_process = export_post_process if not export_benchmark else False
+
         if hasattr(self.model, 'export_nms'):
+
             self.model.export_nms = export_nms if not export_benchmark else False
+
         if export_post_process and not export_benchmark:
+
             image_shape = [None] + image_shape[1:]
 
         # Save infer cfg
-        _dump_infer_config(self.cfg,
-                           os.path.join(save_dir, yaml_name), image_shape,
-                           self.model)
+        _dump_infer_config(
+            self.cfg,
+           os.path.join(save_dir, yaml_name),
+            image_shape,
+           self.model
+        )
 
         input_spec = [{
             "image": InputSpec(
-                shape=image_shape, name='image'),
+                shape=image_shape, name='image'
+            ),
             "im_shape": InputSpec(
-                shape=im_shape, name='im_shape'),
+                shape=im_shape, name='im_shape'
+            ),
             "scale_factor": InputSpec(
-                shape=scale_factor, name='scale_factor')
+                shape=scale_factor, name='scale_factor'
+            )
         }]
+
         if self.cfg.architecture == 'DeepSORT':
+
             input_spec[0].update({
                 "crops": InputSpec(
-                    shape=[None, 3, 192, 64], name='crops')
+                    shape=[None, 3, 192, 64], name='crops'
+                )
             })
 
         if self.cfg.architecture == 'CLRNet':
+
             input_spec[0].update({
                 "full_img_path": str,
                 "img_name": str,
             })
+
         if prune_input:
+
             static_model = paddle.jit.to_static(
-                self.model, input_spec=input_spec) # , full_graph=True
+                self.model, input_spec=input_spec
+            ) # , full_graph=True
             # NOTE: dy2st do not pruned program, but jit.save will prune program
             # input spec, prune input spec here and save with pruned input spec
             pruned_input_spec = _prune_input_spec(
-                input_spec, static_model.forward.main_program,
-                static_model.forward.outputs)
+                input_spec,
+                static_model.forward.main_program,
+                static_model.forward.outputs
+            )
+
         else:
+
             static_model = None
+
             pruned_input_spec = input_spec
 
         # TODO: Hard code, delete it when support prune input_spec.
         if self.cfg.architecture == 'PicoDet' and not export_post_process:
+
             pruned_input_spec = [{
                 "image": InputSpec(
-                    shape=image_shape, name='image')
+                    shape=image_shape, name='image'
+                )
             }]
+
         if kl_quant:
+
             if self.cfg.architecture == 'PicoDet' or 'ppyoloe' in self.cfg.weights:
+
                 pruned_input_spec = [{
                     "image": InputSpec(
                         shape=image_shape, name='image'),
                     "scale_factor": InputSpec(
                         shape=scale_factor, name='scale_factor')
                 }]
+
             elif 'tinypose' in self.cfg.weights:
+
                 pruned_input_spec = [{
                     "image": InputSpec(
-                        shape=image_shape, name='image')
+                        shape=image_shape, name='image'
+                    )
                 }]
 
         return static_model, pruned_input_spec
 
     def export(self, output_dir='output_inference', for_fd=False):
+
         if hasattr(self.model, 'aux_neck'):
+
             self.model.__delattr__('aux_neck')
+
         if hasattr(self.model, 'aux_head'):
+
             self.model.__delattr__('aux_head')
+
         self.model.eval()
 
         model_name = os.path.splitext(os.path.split(self.cfg.filename)[-1])[0]
+
         if for_fd:
+
             save_dir = output_dir
+
             save_name = 'inference'
             yaml_name = 'inference.yml'
+
         else:
+
             save_dir = os.path.join(output_dir, model_name)
+
             save_name = 'model'
             yaml_name = None
 
         if not os.path.exists(save_dir):
+
             os.makedirs(save_dir)
 
         static_model, pruned_input_spec = self._get_infer_cfg_and_input_spec(
-            save_dir, yaml_name=yaml_name)
+            save_dir, yaml_name=yaml_name
+        )
 
         # dy2st and save model
         if 'slim' not in self.cfg or 'QAT' not in self.cfg['slim_type']:
+
             paddle.jit.save(
                 static_model,
                 os.path.join(save_dir, save_name),
-                input_spec=pruned_input_spec)
+                input_spec=pruned_input_spec
+            )
+
         else:
+
             self.cfg.slim.save_quantized_model(
                 self.model,
                 os.path.join(save_dir, save_name),
-                input_spec=pruned_input_spec)
+                input_spec=pruned_input_spec
+            )
+
         logger.info("Export model and saved in {}".format(save_dir))
 
     def post_quant(self, output_dir='output_inference'):
+
         model_name = os.path.splitext(os.path.split(self.cfg.filename)[-1])[0]
+
         save_dir = os.path.join(output_dir, model_name)
+
         if not os.path.exists(save_dir):
+
             os.makedirs(save_dir)
 
         for idx, data in enumerate(self.loader):
+
             self.model(data)
+
             if idx == int(self.cfg.get('quant_batch_num', 10)):
+
                 break
 
         # TODO: support prune input_spec
         kl_quant = True if hasattr(self.cfg.slim, 'ptq') else False
+
         _, pruned_input_spec = self._get_infer_cfg_and_input_spec(
-            save_dir, prune_input=False, kl_quant=kl_quant)
+            save_dir,
+            prune_input=False,
+            kl_quant=kl_quant
+        )
 
         self.cfg.slim.save_quantized_model(
             self.model,
             os.path.join(save_dir, 'model'),
-            input_spec=pruned_input_spec)
+            input_spec=pruned_input_spec
+        )
+
         logger.info("Export Post-Quant model and saved in {}".format(save_dir))
 
     def _flops(self, loader):
+
         if hasattr(self.model, 'aux_neck'):
             self.model.__delattr__('aux_neck')
         if hasattr(self.model, 'aux_head'):
             self.model.__delattr__('aux_head')
+
         self.model.eval()
+
         try:
+
             import paddleslim
+
         except Exception as e:
+
             logger.warning(
                 'Unable to calculate flops, please install paddleslim, for example: `pip install paddleslim`'
             )
+
             return
 
         from paddleslim.analysis import dygraph_flops as flops
+
         input_data = None
+
         for data in loader:
+
             input_data = data
+
             break
 
         input_spec = [{
@@ -1773,45 +1871,72 @@ class Trainer(object):
             "im_shape": input_data['im_shape'][0].unsqueeze(0),
             "scale_factor": input_data['scale_factor'][0].unsqueeze(0)
         }]
+
         flops = flops(self.model, input_spec) / (1000**3)
+
         logger.info(" Model FLOPs : {:.6f}G. (image shape is {})".format(
-            flops, input_data['image'][0].unsqueeze(0).shape))
+            flops, input_data['image'][0].unsqueeze(0).shape)
+        )
 
     def parse_mot_images(self, cfg):
+
         import glob
+
         # for quant
         dataset_dir = cfg['EvalMOTDataset'].dataset_dir
         data_root = cfg['EvalMOTDataset'].data_root
         data_root = '{}/{}'.format(dataset_dir, data_root)
+
         seqs = os.listdir(data_root)
+
         seqs.sort()
+
         all_images = []
+
         for seq in seqs:
+
             infer_dir = os.path.join(data_root, seq)
-            assert infer_dir is None or os.path.isdir(infer_dir), \
-                "{} is not a directory".format(infer_dir)
+
+            assert infer_dir is None or os.path.isdir(infer_dir), "{} is not a directory".format(infer_dir)
+
             images = set()
+
             exts = ['jpg', 'jpeg', 'png', 'bmp']
+
             exts += [ext.upper() for ext in exts]
+
             for ext in exts:
+
                 images.update(glob.glob('{}/*.{}'.format(infer_dir, ext)))
+
             images = list(images)
+
             images.sort()
+
             assert len(images) > 0, "no image found in {}".format(infer_dir)
+
             all_images.extend(images)
+
             logger.info("Found {} inference images in total.".format(
-                len(images)))
+                len(images))
+            )
+
         return all_images
 
-    def predict_culane(self,
-                       images,
-                       output_dir='output',
-                       save_results=False,
-                       visualize=True):
+    def predict_culane(
+        self,
+        images,
+        output_dir='output',
+        save_results=False,
+        visualize=True
+    ):
+
         if not os.path.exists(output_dir):
+
             os.makedirs(output_dir)
 
         self.dataset.set_images(images)
+
         loader = create('TestReader')(self.dataset, 0)
 
         imid2path = self.dataset.get_imid2path()
@@ -1819,32 +1944,44 @@ class Trainer(object):
         def setup_metrics_for_loader():
             # mem
             metrics = copy.deepcopy(self._metrics)
+
             mode = self.mode
+
             save_prediction_only = self.cfg[
-                'save_prediction_only'] if 'save_prediction_only' in self.cfg else None
+                'save_prediction_only'
+            ] if 'save_prediction_only' in self.cfg else None
             output_eval = self.cfg[
-                'output_eval'] if 'output_eval' in self.cfg else None
+                'output_eval'
+            ] if 'output_eval' in self.cfg else None
 
             # modify
             self.mode = '_test'
+
             self.cfg['save_prediction_only'] = True
             self.cfg['output_eval'] = output_dir
             self.cfg['imid2path'] = imid2path
+
             self._init_metrics()
 
             # restore
             self.mode = mode
+
             self.cfg.pop('save_prediction_only')
+
             if save_prediction_only is not None:
+
                 self.cfg['save_prediction_only'] = save_prediction_only
 
             self.cfg.pop('output_eval')
+
             if output_eval is not None:
+
                 self.cfg['output_eval'] = output_eval
 
             self.cfg.pop('imid2path')
 
             _metrics = copy.deepcopy(self._metrics)
+
             self._metrics = metrics
 
             return _metrics
@@ -1856,43 +1993,63 @@ class Trainer(object):
 
         # Run Infer 
         self.status['mode'] = 'test'
+
         self.model.eval()
+
         if self.cfg.get('print_flops', False):
+
             flops_loader = create('TestReader')(self.dataset, 0)
+
             self._flops(flops_loader)
+
         results = []
+
         for step_id, data in enumerate(tqdm(loader)):
+
             self.status['step_id'] = step_id
+
             # forward
             outs = self.model(data)
 
             for _m in metrics:
+
                 _m.update(data, outs)
 
             for key in ['im_shape', 'scale_factor', 'im_id']:
+
                 if isinstance(data, typing.Sequence):
                     outs[key] = data[0][key]
                 else:
                     outs[key] = data[key]
+
             for key, value in outs.items():
+
                 if hasattr(value, 'numpy'):
+
                     outs[key] = value.numpy()
+
             results.append(outs)
 
         for _m in metrics:
+
             _m.accumulate()
             _m.reset()
 
         if visualize:
+
             import cv2
 
             for outs in results:
+
                 for i in range(len(outs['img_path'])):
+
                     lanes = outs['lanes'][i]
                     img_path = outs['img_path'][i]
+
                     img = cv2.imread(img_path)
-                    out_file = os.path.join(output_dir,
-                                            os.path.basename(img_path))
+
+                    out_file = os.path.join(output_dir, os.path.basename(img_path))
+
                     lanes = [
                         lane.to_array(
                             sample_y_range=[
@@ -1901,8 +2058,10 @@ class Trainer(object):
                                 self.cfg['sample_y']['step']
                             ],
                             img_w=self.cfg.ori_img_w,
-                            img_h=self.cfg.ori_img_h) for lane in lanes
+                            img_h=self.cfg.ori_img_h
+                        ) for lane in lanes
                     ]
+
                     imshow_lanes(img, lanes, out_file=out_file)
 
         return results

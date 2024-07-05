@@ -15,17 +15,22 @@ import copy
 
 from paddle_serving_server.web_service import WebService, Op
 from paddle_serving_server.proto import general_model_config_pb2 as m_config
+
 import google.protobuf.text_format
 
 import os
 import numpy as np
 import base64
+
 from PIL import Image
+
 import io
+
 from preprocess_ops import Compose
 from postprocess_ops import HRNetPostProcess
 
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
+
 import yaml
 
 # Global dictionary
@@ -39,65 +44,105 @@ GLOBAL_VAR = {}
 
 
 class ArgsParser(ArgumentParser):
+
     def __init__(self):
+
         super(ArgsParser, self).__init__(
+
             formatter_class=RawDescriptionHelpFormatter)
+
         self.add_argument(
             "-c",
             "--config",
             default="deploy/serving/python/config.yml",
-            help="configuration file to use")
+            help="configuration file to use"
+        )
+
         self.add_argument(
             "--model_dir",
             type=str,
             default=None,
             help=("Directory include:'model.pdiparams', 'model.pdmodel', "
                   "'infer_cfg.yml', created by tools/export_model.py."),
-            required=True)
+            required=True
+        )
+
         self.add_argument(
-            "-o", "--opt", nargs='+', help="set configuration options")
+            "-o", "--opt", nargs='+', help="set configuration options"
+        )
 
     def parse_args(self, argv=None):
+        #
         args = super(ArgsParser, self).parse_args(argv)
+
         assert args.config is not None, \
             "Please specify --config=configure_file_path."
+
         args.service_config = self._parse_opt(args.opt, args.config)
         args.model_config = PredictConfig(args.model_dir)
+
         return args
 
     def _parse_helper(self, v):
+        #
         if v.isnumeric():
             if "." in v:
                 v = float(v)
             else:
                 v = int(v)
+
         elif v == "True" or v == "False":
+
             v = (v == "True")
+
         return v
 
     def _parse_opt(self, opts, conf_path):
+
         f = open(conf_path)
+
         config = yaml.load(f, Loader=yaml.Loader)
+
         if not opts:
+
             return config
+
         for s in opts:
+
             s = s.strip()
+
             k, v = s.split('=')
+
             v = self._parse_helper(v)
+
             if "devices" in k:
+
                 v = str(v)
+
             print(k, v, type(v))
+
             cur = config
+
             parent = cur
+
             for kk in k.split("."):
+
                 if kk not in cur:
+
                     cur[kk] = {}
+
                     parent = cur
+
                     cur = cur[kk]
+
                 else:
+
                     parent = cur
+
                     cur = cur[kk]
+
             parent[k.split(".")[-1]] = v
+
         return config
 
 
@@ -108,25 +153,43 @@ class PredictConfig(object):
     """
 
     def __init__(self, model_dir):
+        #
         # parsing Yaml config for Preprocess
+        #
         deploy_file = os.path.join(model_dir, 'infer_cfg.yml')
+
         with open(deploy_file) as f:
+
             yml_conf = yaml.safe_load(f)
+
         self.check_model(yml_conf)
+
         self.arch = yml_conf['arch']
+
         self.preprocess_infos = yml_conf['Preprocess']
+
         self.min_subgraph_size = yml_conf['min_subgraph_size']
+
         self.label_list = yml_conf['label_list']
+
         self.use_dynamic_shape = yml_conf['use_dynamic_shape']
+
         self.draw_threshold = yml_conf.get("draw_threshold", 0.5)
+
         self.mask = yml_conf.get("mask", False)
+
         self.tracker = yml_conf.get("tracker", None)
+
         self.nms = yml_conf.get("NMS", None)
+
         self.fpn_stride = yml_conf.get("fpn_stride", None)
+
         if self.arch == 'RCNN' and yml_conf.get('export_onnx', False):
+
             print(
                 'The RCNN export model is used for ONNX and it only supports batch_size = 1'
             )
+
         self.print_config()
 
     def check_model(self, yml_conf):
@@ -135,8 +198,11 @@ class PredictConfig(object):
             ValueError: loaded model not in supported model type
         """
         for support_model in SUPPORT_MODELS:
+            #
             if support_model in yml_conf['arch']:
+                #
                 return True
+
         raise ValueError("Unsupported arch: {}, expect {}".format(yml_conf[
             'arch'], SUPPORT_MODELS))
 
@@ -225,37 +291,51 @@ class DetectorOp(Op):
 
 
 class DetectorService(WebService):
+    #
     def get_pipeline_response(self, read_op):
+        #
         return DetectorOp(name="ppdet", input_ops=[read_op])
 
 
 def get_model_vars(model_dir, service_config):
+    #
     serving_server_dir = os.path.join(model_dir, "serving_server")
+
     # rewrite model_config
-    service_config['op']['ppdet']['local_service_conf'][
-        'model_config'] = serving_server_dir
-    serving_server_conf = os.path.join(serving_server_dir,
-                                       "serving_server_conf.prototxt")
+    service_config['op']['ppdet']['local_service_conf']['model_config'] = serving_server_dir
+
+    serving_server_conf = os.path.join(serving_server_dir, "serving_server_conf.prototxt")
+
     with open(serving_server_conf, 'r') as f:
-        model_var = google.protobuf.text_format.Merge(
-            str(f.read()), m_config.GeneralModelConfig())
+
+        model_var = google.protobuf.text_format.Merge(str(f.read()), m_config.GeneralModelConfig())
+
     feed_vars = [var.name for var in model_var.feed_var]
+
     fetch_vars = [var.name for var in model_var.fetch_var]
+
     return feed_vars, fetch_vars
 
 
 if __name__ == '__main__':
+    #
     # load config and prepare the service
+    #
     FLAGS = ArgsParser().parse_args()
-    feed_vars, fetch_vars = get_model_vars(FLAGS.model_dir,
-                                           FLAGS.service_config)
+
+    feed_vars, fetch_vars = get_model_vars(FLAGS.model_dir, FLAGS.service_config)
+
     GLOBAL_VAR['feed_vars'] = feed_vars
     GLOBAL_VAR['fetch_vars'] = fetch_vars
     GLOBAL_VAR['preprocess_ops'] = FLAGS.model_config.preprocess_infos
     GLOBAL_VAR['model_config'] = FLAGS.model_config
+
     print(FLAGS)
+
     # define the service
     uci_service = DetectorService(name="ppdet")
+
     uci_service.prepare_pipeline_config(yml_dict=FLAGS.service_config)
+
     # start the service
     uci_service.run_service()

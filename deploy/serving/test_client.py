@@ -13,23 +13,30 @@
 # limitations under the License.
 
 import sys
+
 import numpy as np
+
 from paddle_serving_client import Client
 from paddle_serving_app.reader import *
+
 import cv2
+
 preprocess = Sequential([
-    File2Image(), BGR2RGB(), Resize(
-        (608, 608), interpolation=cv2.INTER_LINEAR), Div(255.0), Transpose(
-            (2, 0, 1))
+    File2Image(), BGR2RGB(), Resize((608, 608), interpolation=cv2.INTER_LINEAR), Div(255.0), Transpose(
+            (2, 0, 1)
+    )
 ])
 
 postprocess = RCNNPostprocess(sys.argv[1], "output", [608, 608])
+
 client = Client()
 
 client.load_client_config("serving_client/serving_client_conf.prototxt")
-client.connect(['127.0.0.1:9393'])
+
+client.connect(['10.10.10.103:9393'])
 
 im = preprocess(sys.argv[2])
+
 fetch_map = client.predict(
     feed={
         "image": im,
@@ -37,7 +44,11 @@ fetch_map = client.predict(
         "scale_factor": np.array([1.0, 1.0]).reshape(-1),
     },
     fetch=["multiclass_nms3_0.tmp_0"],
-    batch=False)
+    batch=False
+)
+
 print(fetch_map)
+
 fetch_map["image"] = sys.argv[2]
+
 postprocess(fetch_map)

@@ -1,25 +1,31 @@
 # 服务端预测部署
 
-`PaddleDetection`训练出来的模型可以使用[Serving](https://github.com/PaddlePaddle/Serving) 部署在服务端。  
-本教程以在COCO数据集上用`configs/yolov3/yolov3_darknet53_270e_coco.yml`算法训练的模型进行部署。  
-预训练模型权重文件为[yolov3_darknet53_270e_coco.pdparams](https://paddledet.bj.bcebos.com/models/yolov3_darknet53_270e_coco.pdparams) 。
+`PADDLEDETECTION`训练出来的模型可以使用[SERVING](https://github.com/PaddlePaddle/Serving)部署在服务端。
+本教程以在COCO数据集上用`CONFIGS/YOLOV3/YOLOV3_DARKNET53_270E_COCO.YML`算法训练的模型进行部署。  
+预训练模型权重文件为[YOLOV3_DARKNET53_270E_COCO.PDPARAMS](https://paddledet.bj.bcebos.com/models/yolov3_darknet53_270e_coco.pdparams) 。
 
 ## 1. 首先验证模型
 ```
-python tools/infer.py -c configs/yolov3/yolov3_darknet53_270e_coco.yml --infer_img=demo/000000014439.jpg -o use_gpu=True weights=https://paddledet.bj.bcebos.com/models/yolov3_darknet53_270e_coco.pdparams --infer_img=demo/000000014439.jpg
+python tools/infer.py 
+	-c configs/yolov3/yolov3_darknet53_270e_coco.yml
+	-o use_gpu=True weights=https://paddledet.bj.bcebos.com/models/yolov3_darknet53_270e_coco.pdparams
+	--infer_img=demo/000000014439.jpg
 ```
 
-## 2. 安装 paddle serving
-请参考[PaddleServing](https://github.com/PaddlePaddle/Serving/tree/v0.7.0) 中安装教程安装（版本>=0.7.0）。
+## 2. 安装PADDLE SERVING
+请参考[PADDLESERVING](https://github.com/PaddlePaddle/Serving/tree/v0.7.0)中安装教程安装（版本>=0.7.0）。
 
 ## 3. 导出模型
-PaddleDetection在训练过程包括网络的前向和优化器相关参数，而在部署过程中，我们只需要前向参数，具体参考:[导出模型](https://github.com/PaddlePaddle/PaddleDetection/blob/develop/deploy/EXPORT_MODEL.md)
+PADDLEDETECTION在训练过程包括网络的前向和优化器相关参数，而在部署过程中，我们只需要前向参数，具体参考：[导出模型](https://github.com/PaddlePaddle/PaddleDetection/blob/develop/deploy/EXPORT_MODEL.md)
 
 ```
-python tools/export_model.py -c configs/yolov3/yolov3_darknet53_270e_coco.yml -o weights=https://paddledet.bj.bcebos.com/models/yolov3_darknet53_270e_coco.pdparams --export_serving_model=True
+python tools/export_model.py 
+	-c configs/yolov3/yolov3_darknet53_270e_coco.yml 
+	-o weights=https://paddledet.bj.bcebos.com/models/yolov3_darknet53_270e_coco.pdparams 
+	--export_serving_model=True
 ```
 
-以上命令会在`output_inference/`文件夹下生成一个`yolov3_darknet53_270e_coco`文件夹：
+以上命令会在`OUTPUT_INFERENCE/`文件夹下生成一个`YOLOV3_DARKNET53_270E_COCO`文件夹：
 ```
 output_inference
 │   ├── yolov3_darknet53_270e_coco
@@ -38,8 +44,9 @@ output_inference
 │   │   │   ├── ...
 ```
 
-`serving_client`文件夹下`serving_client_conf.prototxt`详细说明了模型输入输出信息
-`serving_client_conf.prototxt`文件内容为：
+`SERVING_CLINET`文件夹下`SERVING_CLIENT_CONF.PROTOTXT`详细说明了模型输入输出信息
+`SERVING_CLIENT_CONF.PROTOTXT`文件内容为：
+
 ```
 feed_var {
   name: "im_shape"
@@ -78,7 +85,7 @@ fetch_var {
   fetch_type: 2
 ```
 
-## 4. 启动PaddleServing服务
+## 4. 启动PADDLESERVING服务
 
 ```
 cd output_inference/yolov3_darknet53_270e_coco/
@@ -91,7 +98,7 @@ python -m paddle_serving_server.serve --model serving_server --port 9393
 ```
 
 ## 5. 测试部署的服务
-准备`label_list.txt`文件，示例`label_list.txt`文件内容为
+准备`LABEL_LIST.TXT`文件，示例`LABEL_LIST.TXT`文件内容为
 ```
 person
 bicycle
@@ -175,14 +182,14 @@ hair drier
 toothbrush
 ```
 
-设置`prototxt`文件路径为`serving_client/serving_client_conf.prototxt`
-设置`fetch`为`fetch=["multiclass_nms3_0.tmp_0"])`
+设置`PROTOTXT`文件路径为`SERVING_CLIENT/SERVING_CLIENT_CONF.PROTOTXT`
+设置`FETCH`为`FETCH=["MULTICLASS_NMS3_0.TMP_0"])`
 
 测试
 ```
 # 进入目录
 cd output_inference/yolov3_darknet53_270e_coco/
 
-# 测试代码 test_client.py 会自动创建output文件夹，并在output下生成`bbox.json`和`000000014439.jpg`两个文件
+# 测试代码TEST_CLIENT.PY会自动创建OUTPUT文件夹，并在OUTPUT下生成`BBOX.JSON`和`000000014439.JPG`两个文件
 python ../../deploy/serving/test_client.py ../../deploy/serving/label_list.txt ../../demo/000000014439.jpg
 ```
