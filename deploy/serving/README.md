@@ -1,18 +1,19 @@
 # 服务端预测部署
 
 `PADDLEDETECTION`训练出来的模型可以使用[SERVING](https://github.com/PaddlePaddle/Serving)部署在服务端。
-本教程以在COCO数据集上用`CONFIGS/YOLOV3/YOLOV3_DARKNET53_270E_COCO.YML`算法训练的模型进行部署。  
-预训练模型权重文件为[YOLOV3_DARKNET53_270E_COCO.PDPARAMS](https://paddledet.bj.bcebos.com/models/yolov3_darknet53_270e_coco.pdparams) 。
+本教程以在COCO数据集上用`CONFIGS/YOLOV3/YOLOV3_DARKNET53_270E_COCO.YML`算法训练的模型进行部署。
 
+预训练模型权重文件为[YOLOV3_DARKNET53_270E_COCO.PDPARMS](https://paddledet.bj.bcebos.com/models/yolov3_darknet53_270e_coco.pdparams) 。
 ## 1. 首先验证模型
 ```
-python tools/infer.py 
+python tools/infer.py
 	-c configs/yolov3/yolov3_darknet53_270e_coco.yml
 	-o use_gpu=True weights=https://paddledet.bj.bcebos.com/models/yolov3_darknet53_270e_coco.pdparams
 	--infer_img=demo/000000014439.jpg
 ```
 
-## 2. 安装PADDLE SERVING
+## 2. 安装PADDLESERVING
+
 请参考[PADDLESERVING](https://github.com/PaddlePaddle/Serving/tree/v0.7.0)中安装教程安装（版本>=0.7.0）。
 
 ## 3. 导出模型
@@ -26,6 +27,7 @@ python tools/export_model.py
 ```
 
 以上命令会在`OUTPUT_INFERENCE/`文件夹下生成一个`YOLOV3_DARKNET53_270E_COCO`文件夹：
+
 ```
 output_inference
 │   ├── yolov3_darknet53_270e_coco
@@ -83,6 +85,7 @@ fetch_var {
   alias_name: "multiclass_nms3_0.tmp_2"
   is_lod_tensor: false
   fetch_type: 2
+```
 ```
 
 ## 4. 启动PADDLESERVING服务
@@ -181,8 +184,8 @@ teddy bear
 hair drier
 toothbrush
 ```
-
 设置`PROTOTXT`文件路径为`SERVING_CLIENT/SERVING_CLIENT_CONF.PROTOTXT`
+
 设置`FETCH`为`FETCH=["MULTICLASS_NMS3_0.TMP_0"])`
 
 测试
