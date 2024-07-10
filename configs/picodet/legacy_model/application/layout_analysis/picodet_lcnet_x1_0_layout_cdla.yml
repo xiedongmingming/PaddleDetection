@@ -7,7 +7,7 @@ _BASE_: [
 
 pretrain_weights: https://paddleocr.bj.bcebos.com/ppstructure/models/layout/picodet_lcnet_x1_0_fgd_layout_cdla.pdparams
 # pretrain_weights: https://paddledet.bj.bcebos.com/models/pretrained/LCNet_x1_0_pretrained.pdparams
-weights: output/picodet_lcnet_x1_0_layout_cdla/model_final
+weights: tools/output/cdla/20240706/best_model
 find_unused_parameters: True
 use_ema: true
 cycle_epoch: 10
